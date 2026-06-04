@@ -6,6 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
@@ -221,5 +222,6 @@ def pokreni_treniranje(data_path, output_dir):
     print("\nBez G1 i G2:")
     print(df_bez.to_string(index=False))
 
-if __name__ == "__main__":
-    pokreni_treniranje(PROCESSED_PATH, OUTPUT_DIR)
+   
+    if __name__ == "__main__":
+        pokreni_treniranje(PROCESSED_PATH, OUTPUT_DIR)
