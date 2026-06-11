@@ -30,9 +30,8 @@ def izracunaj_metrike(y_test, y_pred, naziv):
 
 
 def analiziraj_skup(X, y, naziv_skupa, output_dir):
-    print(f"\n{'='*60}")
-    print(f"SKUP: {naziv_skupa.upper()}")
-    print(f"{'='*60}")
+    print(f"\nSKUP: {naziv_skupa.upper()}")
+
     print(f"Broj atributa: {X.shape[1]}")
 
     # Podela 70 / 15 / 15
@@ -43,7 +42,7 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     print(f"Podela: Train={len(X_train)} | Validation={len(X_val)} | Test={len(X_test)}")
 
     # ── Metoda 1: Feature Importance ─────────────────────────
-    print("\nMETODA 1: Feature Importance (Random Forest)")
+    print("\nFeature Importance (Random Forest)")
     rf = RandomForestRegressor(random_state=42, n_estimators=100)
     rf.fit(X_train, y_train)
     importances = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
@@ -51,7 +50,7 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     print(f"  Top 10: {fi_top10}")
 
     # ── Metoda 2: SelectKBest ─────────────────────────────────
-    print("\nMETODA 2: SelectKBest (F-statistika)")
+    print("\nSelectKBest (F-statistika)")
     skb = SelectKBest(score_func=f_regression, k=10)
     skb.fit(X_train, y_train)
     skb_top10 = X.columns[skb.get_support()].tolist()
@@ -59,7 +58,7 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     print(f"  Top 10: {skb_top10}")
 
     # ── Metoda 3: RFE ─────────────────────────────────────────
-    print("\nMETODA 3: RFE - Recursive Feature Elimination")
+    print("\nRFE - Recursive Feature Elimination")
     rfe = RFE(estimator=LinearRegression(), n_features_to_select=10)
     rfe.fit(X_train, y_train)
     rfe_top10 = X.columns[rfe.support_].tolist()
@@ -130,7 +129,7 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     plt.close()
 
 def pokreni_odabir_atributa(data_path, output_dir):
-    print("ODABIR NAJZNAČAJNIJIH ATRIBUTA")
+    print("\nODABIR NAJZNAČAJNIJIH ATRIBUTA")
 
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Nema podataka na: {data_path}\nPokreni prvo priprema_podataka.py!")

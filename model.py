@@ -89,7 +89,7 @@ def pokreni_export(data_path, models_dir):
         path = os.path.join(models_dir, f'model_{naziv}.pkl')
         with open(path, 'wb') as f:
             pickle.dump(paket, f)
-        print(f"  Model sačuvan: {path}")
+       
 
    # print("\nExport završen!")
    # print(f"Modeli sačuvani u: {models_dir}")

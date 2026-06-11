@@ -223,5 +223,5 @@ def pokreni_treniranje(data_path, output_dir):
     print(df_bez.to_string(index=False))
 
    
-    if __name__ == "__main__":
-        pokreni_treniranje(PROCESSED_PATH, OUTPUT_DIR)
+if __name__ == "__main__":
+    pokreni_treniranje(PROCESSED_PATH, OUTPUT_DIR)

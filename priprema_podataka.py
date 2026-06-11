@@ -15,7 +15,7 @@ def prepare_data(input_path, output_path):
     # 2. Provera nedostajućih vrednosti (Missing values)
     missing_values = df.isnull().sum()
     total_missing = missing_values.sum()
-    print("\n[PROVERA] Nedostajuće vrednosti:")
+    print("\nNedostajuće vrednosti:")
     if total_missing > 0:
         print(missing_values[missing_values > 0])
             #Moj dataset je cist
@@ -23,12 +23,12 @@ def prepare_data(input_path, output_path):
         print("Nema nedostajućih vrednosti u datasetu.")
 
     # 3. Provera anomalija (Deskriptivna statistika)
-    print("\n[PROVERA] Detekcija anomalija u ocenama i godinama:")
+    print("\nDetekcija anomalija u ocenama i godinama:")
     anomalous_age = df[(df['age'] < 10) | (df['age'] > 25)]
     anomalous_grades = df[(df['G1'] < 0) | (df['G3'] > 20)]
     
     if len(anomalous_age) == 0 and len(anomalous_grades) == 0:
-        print("Nisu uočene anomalije (godine su u opsegu 15-22, ocene u opsegu 0-20).")
+        print("Nisu uočene anomalije.")
     else:
         print(f"UPOZORENJE: Pronađeno {len(anomalous_age)} sumnjivih godina i {len(anomalous_grades)} sumnjivih ocena.")
 
@@ -55,7 +55,7 @@ def prepare_data(input_path, output_path):
     binary_cols = [col for col in all_categorical if col in df_encoded.columns and df_encoded[col].nunique() == 2]
     multi_cols = [col for col in all_categorical if col in df_encoded.columns and df_encoded[col].nunique() > 2]
     
-    print("\n[ENKODIRANJE] Transformacija tekstualnih podataka u brojeve:")
+    print("\nTransformacija tekstualnih podataka u brojeve:")
     print(f" Binarne kolone (Label Encoding): {binary_cols}")
     print(f" Višestruke kategorijske kolone (One-Hot Encoding): {multi_cols}")
     
@@ -76,7 +76,7 @@ def prepare_data(input_path, output_path):
     # 5. Čuvanje procesuiranih podataka    
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df_encoded.to_csv(output_path, index=False)
-    print(f"\n[USPEH] Pripremljeni podaci su sačuvani na lokaciji: {output_path}")
+    print(f"\n")
 
 if __name__ == "__main__":
     # Definišemo relativne putanje prateći tvoju strukturu projekta
