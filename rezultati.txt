@@ -1,0 +1,41 @@
+REZULTATI TRENIRANJA I PODEŠAVANJA HIPERPARAMETARA
+
+========================================================
+REZULTATI — SA G1 I G2
+========================================================
+Podela: Train=507 | Test=127
+
+DEO A: Default modeli
+  Linearna regresija             MAE=0.654  RMSE=0.935  R²=0.893
+  Stablo odlučivanja             MAE=0.732  RMSE=1.023  R²=0.872
+  Slučajna šuma                  MAE=0.795  RMSE=1.140  R²=0.841
+
+ Nakon tuninga (GridSearchCV)
+  Stablo — parametri: {'max_depth': 5, 'min_samples_leaf': 2, 'min_samples_split': 5}
+  Stablo odlučivanja (tuned)     MAE=0.724  RMSE=0.996  R²=0.879
+  Šuma  — parametri: {'max_depth': 10, 'min_samples_split': 5, 'n_estimators': 100}
+  Slučajna šuma (tuned)          MAE=0.701  RMSE=1.000  R²=0.878
+
+========================================================
+REZULTATI — BEZ G1 I G2
+========================================================
+Podela: Train=507 | Test=127
+
+DEO A: Default modeli
+  Linearna regresija             MAE=2.142  RMSE=2.641  R²=0.149
+  Stablo odlučivanja             MAE=2.047  RMSE=2.638  R²=0.151
+  Slučajna šuma                  MAE=2.016  RMSE=2.641  R²=0.149
+
+ Nakon tuninga (GridSearchCV)
+  Stablo — parametri: {'max_depth': 5, 'min_samples_leaf': 2, 'min_samples_split': 5}
+  Stablo odlučivanja (tuned)     MAE=1.937  RMSE=2.456  R²=0.264
+  Šuma  — parametri: {'max_depth': 10, 'min_samples_split': 5, 'n_estimators': 200}
+  Slučajna šuma (tuned)          MAE=2.000  RMSE=2.541  R²=0.212
+
+ZAKLJUČAK
+Najbolji model Sa G1 i G2:
+  Model : Linearna regresija
+  MAE   = 0.654  RMSE = 0.935  R² = 0.893   PREPORUČENI MODEL
+Najbolji model Bez G1 i G2:
+  Model : Stablo odlučivanja (tuned)
+  MAE   = 1.937  RMSE = 2.456  R² = 0.264  

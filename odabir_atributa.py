@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -31,47 +30,43 @@ def izracunaj_metrike(y_test, y_pred, naziv):
 
 def analiziraj_skup(X, y, naziv_skupa, output_dir):
     print(f"\nSKUP: {naziv_skupa.upper()}")
+    print(f"Broj atributa pre selekcije: {X.shape[1]}")
 
-    print(f"Broj atributa: {X.shape[1]}")
-
-    # Podela 70 / 15 / 15
-    X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.30, random_state=42)
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.50, random_state=42)
-    print(f"Podela: Train={len(X_train)} | Validation={len(X_val)} | Test={len(X_test)}")
+    # Delimo na 80/20 (izbacili smo val split jer nam smanjuje uzorak loših učenika)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.20, random_state=42)
+    print(f"Podela: Train={len(X_train)} | Test={len(X_test)}")
 
     # ── Metoda 1: Feature Importance ─────────────────────────
-    print("\nFeature Importance (Random Forest)")
+    print("\nFeature Importance (Random Forest)...")
     rf = RandomForestRegressor(random_state=42, n_estimators=100)
     rf.fit(X_train, y_train)
     importances = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
     fi_top10 = importances.head(10).index.tolist()
-    print(f"  Top 10: {fi_top10}")
 
     # ── Metoda 2: SelectKBest ─────────────────────────────────
-    print("\nSelectKBest (F-statistika)")
+    print("SelectKBest (F-statistika)...")
     skb = SelectKBest(score_func=f_regression, k=10)
     skb.fit(X_train, y_train)
     skb_top10 = X.columns[skb.get_support()].tolist()
     skb_scores = pd.Series(skb.scores_, index=X.columns).sort_values(ascending=False)
-    print(f"  Top 10: {skb_top10}")
 
     # ── Metoda 3: RFE ─────────────────────────────────────────
-    print("\nRFE - Recursive Feature Elimination")
+    print("RFE - Recursive Feature Elimination...")
     rfe = RFE(estimator=LinearRegression(), n_features_to_select=10)
     rfe.fit(X_train, y_train)
     rfe_top10 = X.columns[rfe.support_].tolist()
-    print(f"  Top 10: {rfe_top10}")
 
-    # ── Presek ────────────────────────────────────────────────
+    # ── Presek metoda ────────────────────────────────────────
     sve = fi_top10 + skb_top10 + rfe_top10
     selektovani = [k for k, v in Counter(sve).items() if v >= 2]
-    print(f"\nSelektovani (bar 2/3 metode) — {len(selektovani)}: {selektovani}")
+    
+    # ISPIS KAKO BI VIDELA ŠTA TAČNO TREBA STAVITI U FEAT_SA ILI FEAT_BEZ
+    print(f"\n🔥 KONAČNO SELEKTOVANI ATRIBUTI ZA OVAJ SKUP (bar 2/3 metode):")
+    print(f"{selektovani}")
 
-    # ── Poređenje: svi vs selektovani ────────────────────────
+    # Poređenje
     print("\nSa SVIM atributima:")
-    rez_svi = []
     for naziv, model in {
         'Linearna regresija': LinearRegression(),
         'Stablo odlučivanja': DecisionTreeRegressor(random_state=42, max_depth=5),
@@ -79,10 +74,9 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     }.items():
         model.fit(X_train, y_train)
         yp = np.clip(np.round(model.predict(X_test)), 0, 20)
-        rez_svi.append(izracunaj_metrike(y_test, yp, naziv))
+        izracunaj_metrike(y_test, yp, naziv)
 
     print(f"\nSamo sa SELEKTOVANIM ({len(selektovani)}):")
-    rez_sel = []
     for naziv, model in {
         'Linearna regresija': LinearRegression(),
         'Stablo odlučivanja': DecisionTreeRegressor(random_state=42, max_depth=5),
@@ -90,43 +84,33 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     }.items():
         model.fit(X_train[selektovani], y_train)
         yp = np.clip(np.round(model.predict(X_test[selektovani])), 0, 20)
-        rez_sel.append(izracunaj_metrike(y_test, yp, naziv))
+        izracunaj_metrike(y_test, yp, naziv)
 
+    # Iscrtavanje grafikona
     naziv_safe = naziv_skupa.replace(' ', '_').replace('/', '')
-
-    # ── Grafikon 1: 3 metode ──────────────────────────────────
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle(f'Odabir atributa — 3 metode ({naziv_skupa})',
-                 fontsize=13, fontweight='bold')
+    fig.suptitle(f'Odabir atributa — 3 metode ({naziv_skupa})', fontsize=13, fontweight='bold')
 
-    # Feature Importance
     top15 = importances.head(15).sort_values()
     boje = ['#4A90D9' if v > 0.05 else '#AEC6E8' for v in top15.values]
     axes[0].barh(top15.index, top15.values, color=boje, edgecolor='white')
     axes[0].set_title('Metoda 1: Feature Importance\n(Random Forest)')
-    axes[0].set_xlabel('Važnost')
     axes[0].grid(axis='x', alpha=0.3)
 
-    # SelectKBest
     top15_skb = skb_scores.head(15).sort_values()
     boje2 = ['#2ECC71' if k in skb_top10 else '#A8E6CF' for k in top15_skb.index]
     axes[1].barh(top15_skb.index, top15_skb.values, color=boje2, edgecolor='white')
     axes[1].set_title('Metoda 2: SelectKBest\n(F-statistika)')
-    axes[1].set_xlabel('F-score')
     axes[1].grid(axis='x', alpha=0.3)
 
-    # RFE
     rfe_ranking = pd.Series(rfe.ranking_, index=X.columns).sort_values().head(15)
     boje3 = ['#E85D75' if v == 1 else '#F4A7B2' for v in rfe_ranking.values]
     axes[2].barh(rfe_ranking.index, rfe_ranking.values, color=boje3, edgecolor='white')
     axes[2].set_title('Metoda 3: RFE\n(rang 1 = izabran)')
-    axes[2].set_xlabel('Rang (niži = važniji)')
-    axes[2].grid(axis='x', alpha=0.3)
-
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f'odabir_atributa_metode_{naziv_safe}.png'),
-                bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, f'odabir_atributa_metode_{naziv_safe}.png'), bbox_inches='tight')
     plt.close()
+
 
 def pokreni_odabir_atributa(data_path, output_dir):
     print("\nODABIR NAJZNAČAJNIJIH ATRIBUTA")
@@ -135,7 +119,11 @@ def pokreni_odabir_atributa(data_path, output_dir):
         raise FileNotFoundError(f"Nema podataka na: {data_path}\nPokreni prvo priprema_podataka.py!")
 
     df = pd.read_csv(data_path)
-    print(f"Učitan dataset: {df.shape[0]} redova, {df.shape[1]} kolona")
+    
+    # Filtriranje lažnih nula pre analize atributa
+    anomalija = (df['G3'] == 0) & (df['absences'] == 0)
+    df = df[~anomalija]
+    print(f"Učitan dataset (očišćen): {df.shape[0]} redova")
 
     y = df['G3']
 
