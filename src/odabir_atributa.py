@@ -16,8 +16,11 @@ import warnings
 warnings.filterwarnings('ignore')
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROCESSED_PATH = os.path.join(CURRENT_DIR, 'data', 'processed', 'student_processed.csv')
-OUTPUT_DIR = os.path.join(CURRENT_DIR, 'izvestaj_grafikoni')
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+
+PROCESSED_PATH = os.path.join(PROJECT_ROOT, 'data', 'processed', 'student_processed.csv')
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'izvestaj_grafikoni')
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def izracunaj_metrike(y_test, y_pred, naziv):
@@ -32,9 +35,8 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     print(f"\nSKUP: {naziv_skupa.upper()}")
     print(f"Broj atributa pre selekcije: {X.shape[1]}")
 
-    # Delimo na 80/20 (izbacili smo val split jer nam smanjuje uzorak loših učenika)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, random_state=42)
+    X, y, test_size=0.30, random_state=42)
     print(f"Podela: Train={len(X_train)} | Test={len(X_test)}")
 
     # ── Metoda 1: Feature Importance ─────────────────────────
@@ -60,10 +62,6 @@ def analiziraj_skup(X, y, naziv_skupa, output_dir):
     # ── Presek metoda ────────────────────────────────────────
     sve = fi_top10 + skb_top10 + rfe_top10
     selektovani = [k for k, v in Counter(sve).items() if v >= 2]
-    
-    # ISPIS KAKO BI VIDELA ŠTA TAČNO TREBA STAVITI U FEAT_SA ILI FEAT_BEZ
-    print(f"\n🔥 KONAČNO SELEKTOVANI ATRIBUTI ZA OVAJ SKUP (bar 2/3 metode):")
-    print(f"{selektovani}")
 
     # Poređenje
     print("\nSa SVIM atributima:")

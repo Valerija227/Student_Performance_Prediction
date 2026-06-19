@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 def pokreni_eksplorativnu_analizu(data_path, output_dir):
     print("Eksplorativna analiza skupa")
@@ -35,9 +38,9 @@ def pokreni_eksplorativnu_analizu(data_path, output_dir):
     # Ispis najjačih korelacija sa G3 u terminalu
     print("\nTop 5 atributa koji imaju najjacu korelaciju sa završnom ocenom G3:")
     korelacij_sa_g3 = matrica_korelacije['G3'].sort_values(ascending=False)
-    print(korelacij_sa_g3.head(4)) # Prikazuje G3, G2, G1
+    print(korelacij_sa_g3.head(5)) # Prikazuje G3, G2, G1
     print("\nAtributi sa najjačom NEGATIVNOM korelacijom (smanjuju ocenu):")
-    print(korelacij_sa_g3.tail(2)) # Prikazuje npr. failures (padanja na ispitima) i absences
+    print(korelacij_sa_g3.tail(2)) 
     
     # 2. Detekcija anomalija i ekstrema (Boxplot)
     print("\nAnaliza ekstremnih vrednosti (Outliers)")
@@ -62,8 +65,9 @@ def pokreni_eksplorativnu_analizu(data_path, output_dir):
 
 if __name__ == "__main__":
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    
-    PROCESSED_DATA_PATH = os.path.join(CURRENT_DIR, 'data', 'processed', 'student_processed.csv')
-    OUTPUT_IMAGES_DIR = os.path.join(CURRENT_DIR, 'izvestaj_grafikoni')
+    PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+
+    PROCESSED_DATA_PATH = os.path.join(PROJECT_ROOT, 'data', 'processed', 'student_processed.csv')
+    OUTPUT_IMAGES_DIR = os.path.join(PROJECT_ROOT, 'izvestaj_grafikoni')
     
     pokreni_eksplorativnu_analizu(PROCESSED_DATA_PATH, OUTPUT_IMAGES_DIR)

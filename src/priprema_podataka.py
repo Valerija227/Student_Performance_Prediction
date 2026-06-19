@@ -32,9 +32,6 @@ def prepare_data(input_path, output_path):
     else:
         print(f"UPOZORENJE: Pronađeno {len(anomalous_age)} sumnjivih godina i {len(anomalous_grades)} sumnjivih ocena.")
 
-    # 4. Enkodiranje kategorijskih podataka
-# 4. Enkodiranje kategorijskih podataka
-# 4. Enkodiranje kategorijskih podataka
     df_encoded = df.copy()
     
     # Prvo sve kolone koje sadrže tekst ručno prebacujemo u string tip podataka
@@ -73,17 +70,17 @@ def prepare_data(input_path, output_path):
 
     print(f"Enkodiranje završeno. Nove dimenzije dataseta: {df_encoded.shape[0]} redova, {df_encoded.shape[1]} kolona.")
 
-    # 5. Čuvanje procesuiranih podataka    
+    #  Čuvanje procesuiranih podataka    
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df_encoded.to_csv(output_path, index=False)
     print(f"\n")
 
 if __name__ == "__main__":
-    # Definišemo relativne putanje prateći tvoju strukturu projekta
+# Definišemo relativne putanje
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    
-    RAW_DATA_PATH = os.path.join(CURRENT_DIR, 'data', 'raw', 'student-por.csv')
-    PROCESSED_DATA_PATH = os.path.join(CURRENT_DIR, 'data', 'processed', 'student_processed.csv')
-    
+    PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+
+    RAW_DATA_PATH = os.path.join(PROJECT_ROOT, 'data', 'raw', 'student-por.csv')
+    PROCESSED_DATA_PATH = os.path.join(PROJECT_ROOT, 'data', 'processed', 'student_processed.csv')
     # Pokrećemo funkciju
     prepare_data(RAW_DATA_PATH, PROCESSED_DATA_PATH)
