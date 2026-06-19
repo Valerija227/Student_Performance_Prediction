@@ -6,9 +6,9 @@ import pickle
 import os
 
 # UČITAVANJE MODELA
-
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR  = os.path.join(CURRENT_DIR, 'modeli')
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))  
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)                 
+MODELS_DIR = os.path.join(PROJECT_ROOT, 'modeli')
 
 @st.cache_resource
 def ucitaj_modele():
