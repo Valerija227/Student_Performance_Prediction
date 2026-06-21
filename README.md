@@ -1,4 +1,3 @@
-# Student_Performance_Prediction
 # Student Performance Prediction
 
 Predikcija završne ocene učenika (G3) na osnovu školskih i socio-demografskih podataka, korišćenjem algoritama mašinskog učenja. Projekat upoređuje dva scenarija — sa i bez dostupnih parcijalnih ocena (G1, G2) — kako bi se procenilo koliko je uspeh učenika predvidiv isključivo na osnovu demografskog i socijalnog profila.
