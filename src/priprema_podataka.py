@@ -25,7 +25,7 @@ def prepare_data(input_path, output_path):
     # 3. Provera anomalija (Deskriptivna statistika)
     print("\nDetekcija anomalija u ocenama i godinama:")
     anomalous_age = df[(df['age'] < 10) | (df['age'] > 25)]
-    anomalous_grades = df[(df['G1'] < 0) | (df['G3'] > 20)]
+    anomalous_grades = df[ (df[['G1','G2','G3']] < 0).any(axis=1) | (df[['G1','G2','G3']] > 20).any(axis=1) ]
     
     if len(anomalous_age) == 0 and len(anomalous_grades) == 0:
         print("Nisu uočene anomalije.")

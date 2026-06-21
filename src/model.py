@@ -13,19 +13,30 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 
 PROCESSED_PATH = os.path.join(PROJECT_ROOT, 'data', 'processed', 'student_processed.csv')
-RAW_PATH = os.path.join(PROJECT_ROOT, 'data', 'raw', 'student-por.csv')
 MODELS_DIR = os.path.join(PROJECT_ROOT, 'modeli')
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 # Atributi modela
-FEAT_SA  = ['G2', 'G1', 'Medu', 'Fedu', 'Dalc', 'reason_other']
-FEAT_BEZ = ['failures', 'Dalc', 'Medu', 'Fedu', 'studytime', 'Walc', 'higher', 'reason_other', 'reason_reputation', 'absences', 'goout']
+# FEAT_BEZ je presek 3 metode selekcije atributa (Feature Importance,
+# SelectKBest, RFE) na skupu BEZ G1/G2 — videti odabir_atributa.py.
+# FEAT_SA = FEAT_BEZ + G1 + G2, dosledno treniranje_modela.py, da bi razlika
+# između dva eksperimenta bila isključivo prisustvo G1/G2.
+FEAT_BEZ = ['failures', 'higher', 'absences', 'studytime', 'Medu',
+            'Walc', 'Dalc', 'school', 'Mjob_teacher']
+FEAT_SA = FEAT_BEZ + ['G1', 'G2']
 
 # ══════════════════════════════════════════════════════════════
 # OVAJ FAJL JE USKLAĐEN SA treniranje_modela.py:
 #   - Ista podela podataka: 70% trening / 15% validacija / 15% test
 #   - Isti skup kandidata (Linearna regresija, Stablo, Šuma - default i tuned)
+#   - SVI modeli (default i tuned) treniraju finalni .fit() SAMO na Train
+#     skupu (70%) — validacioni skup se koristi isključivo za IZBOR
+#     hiperparametara kod Stabla/Šume, nikad za finalni fit. Linearna
+#     regresija nema hiperparametre, pa se trenira jednom, takođe samo na
+#     Train. Ovim su svi kandidati uporedivi pod identičnim uslovima
+#     (ista količina podataka), u skladu sa SAUSAU 5, slajd 31: poređenje
+#     modela je smisleno akko su evaluirani pod istim uslovima.
 #   - Model za finalni .pkl se NE bira fiksno unapred (npr. "uvek Linear"),
 #     već se objektivno bira onaj sa najnižim MAE na Test skupu, isto kao
 #     u treniranje_modela.py. Time su app.py i izveštaj iz
@@ -62,6 +73,7 @@ def izracunaj_metrike(y_true, y_pred):
         'R2': round(r2_score(y_true, y_pred), 3)
     }
 
+
 def podeli_70_15_15(X, y, random_state=42):
     X_train_val, X_test, y_train_val, y_test = train_test_split(
         X, y, test_size=0.15, random_state=random_state)
@@ -69,7 +81,13 @@ def podeli_70_15_15(X, y, random_state=42):
         X_train_val, y_train_val, test_size=0.15/0.85, random_state=random_state)
     return X_train, X_val, X_test, y_train, y_val, y_test
 
+
 def tuniraj_na_validaciji(model_klasa, param_lista, X_train, y_train, X_val, y_val):
+    """
+    Bira hiperparametre na osnovu MAE na validacionom skupu, ali finalni
+    model trenira SAMO na X_train — isto kao default modeli — radi fer
+    poređenja (videti napomenu na vrhu fajla i treniranje_modela.py).
+    """
     najbolji_mae = np.inf
     najbolji_params = None
     for params in param_lista:
@@ -79,15 +97,15 @@ def tuniraj_na_validaciji(model_klasa, param_lista, X_train, y_train, X_val, y_v
         if mae_val < najbolji_mae:
             najbolji_mae = mae_val
             najbolji_params = params
+
     finalni_model = model_klasa(random_state=42, **najbolji_params)
-    X_fit = pd.concat([X_train, X_val])
-    y_fit = pd.concat([y_train, y_val])
-    finalni_model.fit(X_fit, y_fit)
+    finalni_model.fit(X_train, y_train)  # SAMO Train, dosledno default modelima
     return finalni_model, najbolji_params
+
 
 def treniraj_i_sacuvaj(df, features, naziv_modela):
 
-    print(f"\nModelL: {naziv_modela}")
+    print(f"\nModel: {naziv_modela}")
 
     X = df[features]
     y = df['G3']
@@ -98,7 +116,7 @@ def treniraj_i_sacuvaj(df, features, naziv_modela):
 
     kandidati = {}
 
-    # Default modeli (treniraju se samo na Train, kao u treniranje_modela.py)
+    # Svi modeli (default i tuned) treniraju finalni fit SAMO na Train (70%)
     lr = LinearRegression().fit(X_train, y_train)
     kandidati['Linearna regresija'] = lr
 
@@ -108,7 +126,7 @@ def treniraj_i_sacuvaj(df, features, naziv_modela):
     forest_default = RandomForestRegressor(n_estimators=100, random_state=42).fit(X_train, y_train)
     kandidati['Slučajna šuma'] = forest_default
 
-    # Tuned modeli (hiperparametri birani na Val, finalni fit na Train+Val)
+    # Tuned modeli — hiperparametri birani na Val, finalni fit SAMO na Train
     tree_tuned, tree_params = tuniraj_na_validaciji(
         DecisionTreeRegressor, PARAM_TREE, X_train, y_train, X_val, y_val)
     kandidati['Stablo odlučivanja (tuned)'] = tree_tuned
@@ -116,12 +134,6 @@ def treniraj_i_sacuvaj(df, features, naziv_modela):
     forest_tuned, forest_params = tuniraj_na_validaciji(
         RandomForestRegressor, PARAM_FOREST, X_train, y_train, X_val, y_val)
     kandidati['Slučajna šuma (tuned)'] = forest_tuned
-
-    # Linearna regresija nema hiperparametre za tuning, ali da bismo bili
-    # potpuno fer prema tuned modelima (koji su trenirani na Train+Val),
-    # i nju treniramo ponovo na Train+Val pre finalnog poređenja
-    lr_finalna = LinearRegression().fit(pd.concat([X_train, X_val]), pd.concat([y_train, y_val]))
-    kandidati['Linearna regresija'] = lr_finalna
 
     # ── Objektivan izbor: model sa najnižim MAE na Test skupu ──
     rezultati = {}
@@ -166,6 +178,7 @@ def pokreni_export():
     df = pd.read_csv(PROCESSED_PATH)
 
     # Uklanjamo administrativne anomalije
+    # (ista definicija kao u treniranje_modela.py i odabir_atributa.py)
     anomalija = (df['G3'] == 0) & (df['absences'] == 0)
     df = df[~anomalija]
 

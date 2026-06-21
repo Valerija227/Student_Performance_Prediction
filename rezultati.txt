@@ -1,44 +1,76 @@
 REZULTATI TRENIRANJA I PODEŠAVANJA HIPERPARAMETARA
 Podela podataka: 70% trening / 15% validacija / 15% test
+Svi modeli (default i tuned) treniraju se na IDENTIČNOJ količini
+podataka (Train, 70%) radi fer poređenja.
+
+========================================================
 REZULTATI — SA G1 I G2
+========================================================
 Podela: Train=443 | Val=95 | Test=96
 
-DEO A: Default modeli (trenirani na Train, evaluirani na Test)
-  Linearna regresija             MAE=0.705  RMSE=0.923  R²=0.899
-  Stablo odlučivanja             MAE=0.742  RMSE=0.978  R²=0.886
-  Slučajna šuma                  MAE=0.778  RMSE=0.989  R²=0.884
+DEO A: Default modeli
+  Linearna regresija             MAE=0.727  RMSE=0.921  R²=0.899
+  Stablo odlučivanja             MAE=0.838  RMSE=1.067  R²=0.864
+  Slučajna šuma                  MAE=0.781  RMSE=0.972  R²=0.888
 
-DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu)
-  Stablo — parametri: {'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1}  (MAE na Val=0.769)
-  Stablo odlučivanja (tuned)     MAE=0.817  RMSE=1.043  R²=0.870
-  Šuma  — parametri: {'n_estimators': 100, 'max_depth': 10, 'min_samples_split': 5}  (MAE na Val=0.756)
-  Slučajna šuma (tuned)          MAE=0.808  RMSE=1.057  R²=0.867
+DEO A.1: Provera stabilnosti (5-fold CV na trening skupu)
+  [dijagnostika — ne utiče na izbor modela, samo pokazuje koliko je
+   rezultat osetljiv na slučajnost podele podataka]
+  Linearna regresija             CV-MAE prosek=0.675  std=0.045  (po foldu: [0.65 0.73 0.7  0.68 0.6 ])
+  Stablo odlučivanja             CV-MAE prosek=0.736  std=0.063  (po foldu: [0.84 0.76 0.74 0.69 0.65])
+  Slučajna šuma                  CV-MAE prosek=0.692  std=0.078  (po foldu: [0.78 0.72 0.75 0.62 0.58])
+
+DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu,
+        finalni model treniran samo na Train — isto kao default modeli)
+  Stablo — parametri: {'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 2}  (MAE na Val=0.763)
+  Stablo odlučivanja (tuned)     MAE=0.751  RMSE=0.931  R²=0.897
+  Šuma  — parametri: {'n_estimators': 100, 'max_depth': 10, 'min_samples_split': 2}  (MAE na Val=0.752)
+  Slučajna šuma (tuned)          MAE=0.767  RMSE=0.956  R²=0.891
+
+========================================================
 REZULTATI — BEZ G1 I G2
+========================================================
 Podela: Train=443 | Val=95 | Test=96
 
-DEO A: Default modeli (trenirani na Train, evaluirani na Test)
-  Linearna regresija             MAE=2.232  RMSE=2.684  R²=0.142
-  Stablo odlučivanja             MAE=2.089  RMSE=2.633  R²=0.175
-  Slučajna šuma                  MAE=2.120  RMSE=2.649  R²=0.164
+DEO A: Default modeli
+  Linearna regresija             MAE=2.207  RMSE=2.675  R²=0.148
+  Stablo odlučivanja             MAE=2.073  RMSE=2.617  R²=0.185
+  Slučajna šuma                  MAE=2.127  RMSE=2.635  R²=0.173
 
-DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu)
-  Stablo — parametri: {'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1}  (MAE na Val=1.866)
-  Stablo odlučivanja (tuned)     MAE=2.181  RMSE=2.794  R²=0.071
-  Šuma  — parametri: {'n_estimators': 100, 'max_depth': 10, 'min_samples_split': 5}  (MAE na Val=1.777)
-  Slučajna šuma (tuned)          MAE=2.105  RMSE=2.655  R²=0.161
+DEO A.1: Provera stabilnosti (5-fold CV na trening skupu)
+  [dijagnostika — ne utiče na izbor modela, samo pokazuje koliko je
+   rezultat osetljiv na slučajnost podele podataka]
+  Linearna regresija             CV-MAE prosek=1.744  std=0.040  (po foldu: [1.79 1.78 1.68 1.74 1.73])
+  Stablo odlučivanja             CV-MAE prosek=1.885  std=0.078  (po foldu: [1.92 2.01 1.86 1.85 1.78])
+  Slučajna šuma                  CV-MAE prosek=1.861  std=0.127  (po foldu: [1.97 2.04 1.73 1.81 1.74])
+
+DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu,
+        finalni model treniran samo na Train — isto kao default modeli)
+  Stablo — parametri: {'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1}  (MAE na Val=1.902)
+  Stablo odlučivanja (tuned)     MAE=2.073  RMSE=2.617  R²=0.185
+  Šuma  — parametri: {'n_estimators': 200, 'max_depth': 10, 'min_samples_split': 2}  (MAE na Val=1.843)
+  Slučajna šuma (tuned)          MAE=2.044  RMSE=2.552  R²=0.225
 
 ZAKLJUČAK
 
 Skup: Sa G1 i G2
-  Linearna regresija             MAE=0.705  RMSE=0.923  R²=0.899  <-- najbolji (najniži MAE na Test skupu)
-  Stablo odlučivanja             MAE=0.742  RMSE=0.978  R²=0.886
-  Slučajna šuma                  MAE=0.778  RMSE=0.989  R²=0.884
-  Stablo odlučivanja (tuned)     MAE=0.817  RMSE=1.043  R²=0.87
-  Slučajna šuma (tuned)          MAE=0.808  RMSE=1.057  R²=0.867
+  Linearna regresija             MAE=0.727  RMSE=0.921  R²=0.899  <-- najbolji (najniži MAE na Test skupu)
+  Stablo odlučivanja             MAE=0.838  RMSE=1.067  R²=0.864
+  Slučajna šuma                  MAE=0.781  RMSE=0.972  R²=0.888
+  Stablo odlučivanja (tuned)     MAE=0.751  RMSE=0.931  R²=0.897
+  Slučajna šuma (tuned)          MAE=0.767  RMSE=0.956  R²=0.891
+  Stabilnost (CV std na trening skupu, samo default modeli):
+    Linearna regresija           std=0.045  (stabilno)
+    Stablo odlučivanja           std=0.063  (stabilno)
+    Slučajna šuma                std=0.078  (stabilno)
 
 Skup: Bez G1 i G2
-  Linearna regresija             MAE=2.232  RMSE=2.684  R²=0.142
-  Stablo odlučivanja             MAE=2.089  RMSE=2.633  R²=0.175  <-- najbolji (najniži MAE na Test skupu)
-  Slučajna šuma                  MAE=2.12  RMSE=2.649  R²=0.164
-  Stablo odlučivanja (tuned)     MAE=2.181  RMSE=2.794  R²=0.071
-  Slučajna šuma (tuned)          MAE=2.105  RMSE=2.655  R²=0.161
+  Linearna regresija             MAE=2.207  RMSE=2.675  R²=0.148
+  Stablo odlučivanja             MAE=2.073  RMSE=2.617  R²=0.185
+  Slučajna šuma                  MAE=2.127  RMSE=2.635  R²=0.173
+  Stablo odlučivanja (tuned)     MAE=2.073  RMSE=2.617  R²=0.185
+  Slučajna šuma (tuned)          MAE=2.044  RMSE=2.552  R²=0.225  <-- najbolji (najniži MAE na Test skupu)
+  Stabilnost (CV std na trening skupu, samo default modeli):
+    Linearna regresija           std=0.040  (stabilno)
+    Stablo odlučivanja           std=0.078  (stabilno)
+    Slučajna šuma                std=0.127  (stabilno)

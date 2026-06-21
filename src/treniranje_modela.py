@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -23,9 +23,14 @@ OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'izvestaj_grafikoni')
 REZULTATI_PATH = os.path.join(PROJECT_ROOT, 'rezultati.txt')
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-# DEFINIŠEMO TAČNE ATRIBUTE
-FEAT_SA  = ['G2', 'G1', 'Medu', 'Fedu', 'Dalc', 'reason_other']
-FEAT_BEZ = ['failures', 'Dalc', 'Medu', 'Fedu', 'studytime', 'Walc', 'higher', 'reason_other', 'reason_reputation', 'absences', 'goout']
+
+FEAT_BEZ = ['failures', 'higher', 'absences', 'studytime', 'Medu',
+            'Walc', 'Dalc', 'school', 'Mjob_teacher']
+FEAT_SA = FEAT_BEZ + ['G1', 'G2']
+
+# Granice za grupisanje ocena pri analizi greske po opsegu
+BINS_OCENA = [0, 9, 13, 20]
+LABELE_OCENA = ['Niske (≤9)', 'Srednje (10–13)', 'Visoke (≥14)']
 
 PARAM_TREE = [
     {'max_depth': d, 'min_samples_split': s, 'min_samples_leaf': l}
@@ -40,6 +45,7 @@ PARAM_FOREST = [
     for s in [2, 5]
 ]
 
+
 def izracunaj_metrike(y_true, y_pred):
     return {
         'MAE': round(mean_absolute_error(y_true, y_pred), 3),
@@ -47,8 +53,10 @@ def izracunaj_metrike(y_true, y_pred):
         'R2': round(r2_score(y_true, y_pred), 3)
     }
 
+
 def formatiraj_metrike(naziv, m):
     return f"  {naziv:<30} MAE={m['MAE']:.3f}  RMSE={m['RMSE']:.3f}  R²={m['R2']:.3f}"
+
 
 def podeli_70_15_15(X, y, random_state=42):
     X_train_val, X_test, y_train_val, y_test = train_test_split(
@@ -69,11 +77,36 @@ def tuniraj_na_validaciji(model_klasa, param_lista, X_train, y_train, X_val, y_v
         if mae_val < najbolji_mae:
             najbolji_mae = mae_val
             najbolji_params = params
+
     finalni_model = model_klasa(random_state=42, **najbolji_params)
-    X_fit = pd.concat([X_train, X_val])
-    y_fit = pd.concat([y_train, y_val])
-    finalni_model.fit(X_fit, y_fit)
+    finalni_model.fit(X_train, y_train)  # trenira se SAMO na Train, isto kao default modeli
     return finalni_model, najbolji_params, najbolji_mae
+
+
+def nacrtaj_gresku_po_opsegu(y_test, default_predikcije, naziv_skupa, output_dir):
+    grupe_test = pd.cut(y_test, bins=BINS_OCENA, labels=LABELE_OCENA, include_lowest=True)
+
+    rezultati_po_grupi = {}
+    for naziv, y_pred in default_predikcije.items():
+        greske = np.abs(y_test.values - y_pred)
+        df_g = pd.DataFrame({'grupa': grupe_test.values, 'greska': greske})
+        rezultati_po_grupi[naziv] = df_g.groupby('grupa')['greska'].mean().reindex(LABELE_OCENA)
+
+    df_rez = pd.DataFrame(rezultati_po_grupi)
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    df_rez.plot(kind='bar', ax=ax, color=['#4A90D9', '#2ECC71', '#E85D75'], edgecolor='white')
+    ax.set_ylabel('Prosečna apsolutna greška (MAE)')
+    ax.set_xlabel('Opseg stvarne ocene G3')
+    ax.set_title(f'Prosečna greška po opsegu ocena — {naziv_skupa} (default modeli)')
+    ax.legend(title='Model')
+    ax.grid(axis='y', alpha=0.3)
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+
+    naziv_safe = naziv_skupa.replace(' ', '_').replace('/', '')
+    plt.savefig(os.path.join(output_dir, f'greska_po_opsegu_{naziv_safe}.png'), bbox_inches='tight')
+    plt.close()
 
 
 def pokreni_treniranje(data_path, output_dir, rezultati_path):
@@ -85,7 +118,6 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
     df = pd.read_csv(data_path)
     print(f"\nUčitan dataset: {df.shape[0]} redova, {df.shape[1]} kolona")
 
-    # Uklanjamo administrativne anomalije (G3=0 uz absences=0 - odustajanje, ne nizak uspeh)
     anomalija = (df['G3'] == 0) & (df['absences'] == 0)
     df = df[~anomalija]
     print(f"Dataset nakon filtriranja (bez lažnih nula): {df.shape[0]} redova")
@@ -100,15 +132,19 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
     log_linije = []
     log_linije.append("REZULTATI TRENIRANJA I PODEŠAVANJA HIPERPARAMETARA")
     log_linije.append("Podela podataka: 70% trening / 15% validacija / 15% test")
+    log_linije.append("Svi modeli (default i tuned) treniraju se na IDENTIČNOJ količini")
+    log_linije.append("podataka (Train, 70%) radi fer poređenja.")
 
-    svi_rezultati = {}       # {naziv_skupa: {naziv_modela: metrike na test skupu}}
-    default_predikcije_po_skupu = {}
-    najbolji_modeli_po_skupu = {}  # za grafik vaznosti atributa
+    svi_rezultati = {}
+    svi_cv_rezultati = {}
 
     for naziv_skupa, X in skupovi.items():
         print(f"\nSKUP: {naziv_skupa.upper()}")
 
+        log_linije.append("")
+        log_linije.append("=" * 56)
         log_linije.append(f"REZULTATI — {naziv_skupa.upper()}")
+        log_linije.append("=" * 56)
 
         X_train, X_val, X_test, y_train, y_val, y_test = podeli_70_15_15(X, y)
 
@@ -116,9 +152,9 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
         log_linije.append(f"Podela: Train={len(X_train)} | Val={len(X_val)} | Test={len(X_test)}")
 
         # ── DEO A: Default modeli (treniraju se na Train, evaluiraju na Test) ──
-        print("\nDEO A: Modeli sa podrazumevanim parametrima")
+        print("\nDEO A: Treniranje sa podrazumevanim parametrima")
         log_linije.append("")
-        log_linije.append("DEO A: Default modeli (trenirani na Train, evaluirani na Test)")
+        log_linije.append("DEO A: Default modeli")
 
         default_modeli = {
             'Linearna regresija': LinearRegression(),
@@ -139,10 +175,27 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
             print(linija)
             log_linije.append(linija)
 
-        # ── DEO B: Tuning hiperparametara na Validation skupu ──
+        print("\nDEO A.1: Provera stabilnosti (5-fold CV na trening skupu) — DIJAGNOSTIKA, ne kriterijum odabira")
+        log_linije.append("")
+        log_linije.append("DEO A.1: Provera stabilnosti (5-fold CV na trening skupu)")
+        log_linije.append("  [dijagnostika — ne utiče na izbor modela, samo pokazuje koliko je")
+        log_linije.append("   rezultat osetljiv na slučajnost podele podataka]")
+
+        cv_rezultati_skupa = {}
+        for naziv, model in default_modeli.items():
+            cv_mae = -cross_val_score(model, X_train, y_train, cv=5, scoring='neg_mean_absolute_error')
+            cv_rezultati_skupa[naziv] = {'mean': cv_mae.mean(), 'std': cv_mae.std()}
+            linija = (f"  {naziv:<30} CV-MAE prosek={cv_mae.mean():.3f}  "
+                      f"std={cv_mae.std():.3f}  (po foldu: {np.round(cv_mae, 2)})")
+            print(linija)
+            log_linije.append(linija)
+        svi_cv_rezultati[naziv_skupa] = cv_rezultati_skupa
+
+        # ── DEO B: Tuning (na Validation skupu) ──
         print("\nDEO B: Podešavanje hiperparametara (na Validation skupu)")
         log_linije.append("")
-        log_linije.append("DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu)")
+        log_linije.append("DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu,")
+        log_linije.append("        finalni model treniran samo na Train — isto kao default modeli)")
 
         print("  [1/2] Stablo odlučivanja...")
         tree_model, tree_params, tree_val_mae = tuniraj_na_validaciji(
@@ -169,31 +222,9 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
         log_linije.append(linija)
 
         svi_rezultati[naziv_skupa] = rezultati_skupa
-        default_predikcije_po_skupu[naziv_skupa] = (y_test, default_predikcije)
-        najbolji_modeli_po_skupu[naziv_skupa] = {
-            'Slučajna šuma (tuned)': forest_model,
-            'Stablo odlučivanja (tuned)': tree_model,
-        }
 
-        # Grafikon: Stvarno vs Predviđeno (default modeli, na Test skupu)
-        naziv_safe = naziv_skupa.replace(' ', '_').replace('/', '')
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-        fig.suptitle(f'Stvarne vs Predviđene vrednosti — {naziv_skupa} (Test skup)', fontsize=12, fontweight='bold')
-        boje = ['#4A90D9', '#2ECC71', '#E85D75']
-        for ax, (naziv_def, yp_def), boja in zip(axes, default_predikcije.items(), boje):
-            ax.scatter(y_test, yp_def, alpha=0.5, color=boja, edgecolors='white', s=40)
-            lims = [min(y_test.min(), yp_def.min())-0.5, max(y_test.max(), yp_def.max())+0.5]
-            ax.plot(lims, lims, 'k--', lw=1.2, label='Idealno')
-            ax.set_xlabel('Stvarna ocena G3')
-            ax.set_ylabel('Predviđena ocena G3')
-            ax.set_title(naziv_def)
-            ax.legend(fontsize=8)
-            r2_def = rezultati_skupa[naziv_def]['R2'] if naziv_def in rezultati_skupa else r2_score(y_test, yp_def)
-            ax.text(0.05, 0.92, f'R²={r2_def:.3f}', transform=ax.transAxes, fontsize=9,
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f'stvarno_vs_predvidjeno_{naziv_safe}.png'), bbox_inches='tight')
-        plt.close()
+        # ── Grafikon: greska po opsegu ocena (zamena za scatter) ──
+        nacrtaj_gresku_po_opsegu(y_test, default_predikcije, naziv_skupa, output_dir)
 
         if naziv_skupa == 'Bez G1 i G2':
             fig, axes = plt.subplots(1, 2, figsize=(16, 6))
@@ -244,14 +275,21 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
     log_linije.append("ZAKLJUČAK")
     for naziv_skupa, rezultati_skupa in svi_rezultati.items():
         najbolji_naziv = min(rezultati_skupa, key=lambda n: rezultati_skupa[n]['MAE'])
-        najbolja_metrika = rezultati_skupa[najbolji_naziv]
         log_linije.append(f"\nSkup: {naziv_skupa}")
         for naziv_m, m in rezultati_skupa.items():
             oznaka = "  <-- najbolji (najniži MAE na Test skupu)" if naziv_m == najbolji_naziv else ""
             log_linije.append(f"  {naziv_m:<30} MAE={m['MAE']}  RMSE={m['RMSE']}  R²={m['R2']}{oznaka}")
 
+        # Dijagnostička napomena o stabilnosti, na osnovu CV-a iz Dela A.1
+        log_linije.append("  Stabilnost (CV std na trening skupu, samo default modeli):")
+        for naziv_m, cv in svi_cv_rezultati[naziv_skupa].items():
+            napomena = "stabilno" if cv['std'] < 0.3 * cv['mean'] else "osetljivo na podelu podataka"
+            log_linije.append(f"    {naziv_m:<28} std={cv['std']:.3f}  ({napomena})")
+
     with open(rezultati_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(log_linije))
+    print(f"\nRezultati upisani u: {rezultati_path}")
+
 
 if __name__ == "__main__":
     pokreni_treniranje(PROCESSED_PATH, OUTPUT_DIR, REZULTATI_PATH)
