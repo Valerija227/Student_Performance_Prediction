@@ -175,18 +175,16 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
             print(linija)
             log_linije.append(linija)
 
-        print("\nDEO A.1: Provera stabilnosti (5-fold CV na trening skupu) — DIJAGNOSTIKA, ne kriterijum odabira")
+        print("\nDEO A.1: Provera stabilnosti (5-fold CV na trening skupu) , ne kriterijum odabira")
         log_linije.append("")
         log_linije.append("DEO A.1: Provera stabilnosti (5-fold CV na trening skupu)")
-        log_linije.append("  [dijagnostika — ne utiče na izbor modela, samo pokazuje koliko je")
-        log_linije.append("   rezultat osetljiv na slučajnost podele podataka]")
 
         cv_rezultati_skupa = {}
         for naziv, model in default_modeli.items():
             cv_mae = -cross_val_score(model, X_train, y_train, cv=5, scoring='neg_mean_absolute_error')
             cv_rezultati_skupa[naziv] = {'mean': cv_mae.mean(), 'std': cv_mae.std()}
             linija = (f"  {naziv:<30} CV-MAE prosek={cv_mae.mean():.3f}  "
-                      f"std={cv_mae.std():.3f}  (po foldu: {np.round(cv_mae, 2)})")
+                      f"std={cv_mae.std():.3f} )")
             print(linija)
             log_linije.append(linija)
         svi_cv_rezultati[naziv_skupa] = cv_rezultati_skupa
@@ -288,8 +286,6 @@ def pokreni_treniranje(data_path, output_dir, rezultati_path):
 
     with open(rezultati_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(log_linije))
-    print(f"\nRezultati upisani u: {rezultati_path}")
-
 
 if __name__ == "__main__":
     pokreni_treniranje(PROCESSED_PATH, OUTPUT_DIR, REZULTATI_PATH)

@@ -14,11 +14,9 @@ DEO A: Default modeli
   Slučajna šuma                  MAE=0.781  RMSE=0.972  R²=0.888
 
 DEO A.1: Provera stabilnosti (5-fold CV na trening skupu)
-  [dijagnostika — ne utiče na izbor modela, samo pokazuje koliko je
-   rezultat osetljiv na slučajnost podele podataka]
-  Linearna regresija             CV-MAE prosek=0.675  std=0.045  (po foldu: [0.65 0.73 0.7  0.68 0.6 ])
-  Stablo odlučivanja             CV-MAE prosek=0.736  std=0.063  (po foldu: [0.84 0.76 0.74 0.69 0.65])
-  Slučajna šuma                  CV-MAE prosek=0.692  std=0.078  (po foldu: [0.78 0.72 0.75 0.62 0.58])
+  Linearna regresija             CV-MAE prosek=0.675  std=0.045 )
+  Stablo odlučivanja             CV-MAE prosek=0.736  std=0.063 )
+  Slučajna šuma                  CV-MAE prosek=0.692  std=0.078 )
 
 DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu,
         finalni model treniran samo na Train — isto kao default modeli)
@@ -38,11 +36,9 @@ DEO A: Default modeli
   Slučajna šuma                  MAE=2.127  RMSE=2.635  R²=0.173
 
 DEO A.1: Provera stabilnosti (5-fold CV na trening skupu)
-  [dijagnostika — ne utiče na izbor modela, samo pokazuje koliko je
-   rezultat osetljiv na slučajnost podele podataka]
-  Linearna regresija             CV-MAE prosek=1.744  std=0.040  (po foldu: [1.79 1.78 1.68 1.74 1.73])
-  Stablo odlučivanja             CV-MAE prosek=1.885  std=0.078  (po foldu: [1.92 2.01 1.86 1.85 1.78])
-  Slučajna šuma                  CV-MAE prosek=1.861  std=0.127  (po foldu: [1.97 2.04 1.73 1.81 1.74])
+  Linearna regresija             CV-MAE prosek=1.744  std=0.040 )
+  Stablo odlučivanja             CV-MAE prosek=1.885  std=0.078 )
+  Slučajna šuma                  CV-MAE prosek=1.861  std=0.127 )
 
 DEO B: Nakon tuninga (izbor hiperparametara na Validation skupu,
         finalni model treniran samo na Train — isto kao default modeli)
