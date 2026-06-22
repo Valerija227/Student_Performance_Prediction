@@ -33,24 +33,13 @@ def izracunaj_metrike(y_test, y_pred, naziv):
 
 
 def analiziraj_skup(X, y, naziv_skupa, output_dir, prikazi_presek=True):
-    """
-    prikazi_presek=False koristi se za skup 'Sa G1 i G2', gde G1/G2 zbog
-    ogromne korelacije sa G3 (R² ~0.90, videti EDA i Fazu treniranja)
-    dominiraju u sve tri metode selekcije i guše informaciju o doprinosu
-    ostalih atributa. Grafikoni se i dalje crtaju (korisno je VIDETI da
-    G1/G2 dominiraju), ali se rezultujući presek ne tretira kao smislen
-    "redukovan skup atributa" za taj slučaj — selekcija atributa ima
-    praktičnu svrhu samo kada G1/G2 nisu prisutni.
-    """
+
     print(f"\nSKUP: {naziv_skupa.upper()}")
     print(f"Broj atributa pre selekcije: {X.shape[1]}")
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.30, random_state=42)
     print(f"Podela: Train={len(X_train)} | Test={len(X_test)}")
-    print("(Napomena: 70/30 Train/Test bez Validation skupa — ovde se ne biraju")
-    print(" hiperparametri, samo se poredi 'svi atributi' vs 'selektovani atributi'")
-    print(" na fiksnim default modelima, pa validacioni skup nije potreban.)")
 
     # ── Metoda 1: Feature Importance ─────────────────────────
     print("\nFeature Importance (Random Forest)...")
@@ -166,14 +155,6 @@ def pokreni_odabir_atributa(data_path, output_dir):
         df.drop(columns=['G3', 'G1', 'G2']), y, 'Bez G1 i G2', output_dir,
         prikazi_presek=True)
 
-    print("\n" + "=" * 60)
-    print("REZULTAT ZA DALJU UPOTREBU")
-    print("=" * 60)
-    print("Sledeća lista je dobijena preseka 3 metode selekcije atributa")
-    print("(Feature Importance, SelectKBest, RFE) na skupu BEZ G1/G2.")
-    print("Ovu listu treba ručno preneti kao FEAT_BEZ u treniranje_modela.py,")
-    print("da bi izbor atributa u toj fazi proizilazio iz ove analize,")
-    print("a ne iz ručnog/proizvoljnog izbora:\n")
     print(f"FEAT_BEZ = {selektovani_bez}")
 
 

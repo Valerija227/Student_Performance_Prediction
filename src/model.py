@@ -17,39 +17,10 @@ MODELS_DIR = os.path.join(PROJECT_ROOT, 'modeli')
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# Atributi modela
-# FEAT_BEZ je presek 3 metode selekcije atributa (Feature Importance,
-# SelectKBest, RFE) na skupu BEZ G1/G2 — videti odabir_atributa.py.
-# FEAT_SA = FEAT_BEZ + G1 + G2, dosledno treniranje_modela.py, da bi razlika
-# između dva eksperimenta bila isključivo prisustvo G1/G2.
 FEAT_BEZ = ['failures', 'higher', 'absences', 'studytime', 'Medu',
             'Walc', 'Dalc', 'school', 'Mjob_teacher']
 FEAT_SA = FEAT_BEZ + ['G1', 'G2']
 
-# ══════════════════════════════════════════════════════════════
-# OVAJ FAJL JE USKLAĐEN SA treniranje_modela.py:
-#   - Ista podela podataka: 70% trening / 15% validacija / 15% test
-#   - Isti skup kandidata (Linearna regresija, Stablo, Šuma - default i tuned)
-#   - SVI modeli (default i tuned) treniraju finalni .fit() SAMO na Train
-#     skupu (70%) — validacioni skup se koristi isključivo za IZBOR
-#     hiperparametara kod Stabla/Šume, nikad za finalni fit. Linearna
-#     regresija nema hiperparametre, pa se trenira jednom, takođe samo na
-#     Train. Ovim su svi kandidati uporedivi pod identičnim uslovima
-#     (ista količina podataka), u skladu sa SAUSAU 5, slajd 31: poređenje
-#     modela je smisleno akko su evaluirani pod istim uslovima.
-#   - Model za finalni .pkl se NE bira fiksno unapred (npr. "uvek Linear"),
-#     već se objektivno bira onaj sa najnižim MAE na Test skupu, isto kao
-#     u treniranje_modela.py. Time su app.py i izveštaj iz
-#     treniranje_modela.py garantovano usklađeni - prikazuju isti "najbolji
-#     model" i istu metodologiju, samo treniranje_modela.py pravi grafikone
-#     za izveštaj, a ovaj fajl čuva finalni .pkl za Streamlit aplikaciju.
-#
-# NAPOMENA O OGRANIČENJU MODELA "Bez G1 i G2":
-#   Bez školskih ocena, dostupni socio-demografski atributi nemaju dovoljno
-#   jak signal da razdvoje "veoma dobrog" od "izvanrednog" učenika - model
-#   realno ne dostiže predikcije u samom vrhu skale (npr. 18-19), što je
-#   ograničenje samih podataka, a ne greška u implementaciji.
-# ══════════════════════════════════════════════════════════════
 
 # Hiperparametri za pretragu na validacionom skupu
 PARAM_TREE = [
@@ -83,11 +54,6 @@ def podeli_70_15_15(X, y, random_state=42):
 
 
 def tuniraj_na_validaciji(model_klasa, param_lista, X_train, y_train, X_val, y_val):
-    """
-    Bira hiperparametre na osnovu MAE na validacionom skupu, ali finalni
-    model trenira SAMO na X_train — isto kao default modeli — radi fer
-    poređenja (videti napomenu na vrhu fajla i treniranje_modela.py).
-    """
     najbolji_mae = np.inf
     najbolji_params = None
     for params in param_lista:

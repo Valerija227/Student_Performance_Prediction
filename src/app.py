@@ -48,25 +48,10 @@ st.sidebar.caption(f"Model: {paket['naziv_modela']}")
 st.markdown("---")
 st.subheader("📝 Podaci o učeniku")
 
-# Rečnik u koji pakujemo sve korisničke unose.
-# NAPOMENA: FEAT_SA = FEAT_BEZ + ['G1', 'G2'] (videti treniranje_modela.py /
-# export_modela.py), zato forma "Sa G1 i G2" ovde NE duplira polja "Bez
-# G1 i G2" ručno — prikuplja IDENTIČNA polja kao "Bez G1 i G2" funkcijom
-# unesi_zajednicka_polja(), i samo DODAJE G1/G2 slajdere. Time se forma
-# ne može "razminuti" sa FEAT_BEZ listom ako se ona ikad ponovo promeni
-# (npr. nakon nove selekcije atributa) — moralo bi se promeniti samo na
-# jednom mestu.
 svi_atributi = {}
 
-
 def unesi_zajednicka_polja(svi_atributi, key_suffix):
-    """
-    Prikuplja sve atribute iz FEAT_BEZ liste:
-    ['failures', 'higher', 'absences', 'studytime', 'Medu',
-     'Walc', 'Dalc', 'school', 'Mjob_teacher']
-    key_suffix sprečava Streamlit konflikt widget ključeva između
-    dva režima (sa/bez G1G2).
-    """
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
